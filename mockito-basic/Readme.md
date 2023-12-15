@@ -94,15 +94,51 @@ Khái niệm cơ bản đầu tiên, đó là làm sao để tạo ra một đ�
 
 ### 3.1. Mockito.mock()
 Sử dụng Mockito.mock() để tạo ra một object của Class bạn yêu cầu, nó thậm chí còn không quan tâm hàm khởi tạo của Class ý như nào và ra sao, vì nó đâu có thật
-
 ```java
-@Test
-public void testUserMockFunction() {
+List mockList = Mockito.mock(List.class);
+```
+Class test hoàn chỉnh
+```java
+package creacademy.basic.mock;
+
+import org.junit.Assert;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+
+import java.util.List;
+
+public class MockitoMockTest {
+  @Test
+  @DisplayName("Mockito.mock test")
+  public void testMockFunction() {
+    // 1. Tạo mock data
     List mockList = Mockito.mock(List.class);
+
+    // 2. Định nghĩa hành vi
+    // Định nghĩa bất cứ khi nào gọi đến hàm size sẽ trả về 2
     Mockito.when(mockList.size()).thenReturn(2);
+
+    // 3. Gọi method và Kiểm tra kết quả
     Assert.assertEquals(2, mockList.size());
+  }
 }
 ```
+### Thay đổi default value của mock object
+Mockito cho phép chúng ta định nghĩa lại các default value của mock object thông qua các phương thức:
+
+- **Mockito.mock(Class<T> classToMock, Answer defaultAnswer** : cho phép tạo một mock object với loại Answer được chỉ định. Loại Answer chỉ định cách xử lý mặc định nếu một stub method không được xác định.
+- **Mockito.mock(Class<T> classToMock, MockSettings mockSettings)** : cho phép tạo một mock object vói các setting được chỉ định. Các setting này có thể là defaultAnswer(), serializable(), name(), …
+
+Các Answer được hỗ trợ bởi Mockito:
+
+- **RETURNS_DEFAULTS** : đây là default Answer nếu không được chỉ định. Nó trả về các giá trị “empty”, tức là null, 0, false, empty collection.
+- **RETURNS_SMART_NULLS** : tránh return null có thể gây ra lỗi NullPointerException. Nó trả về một SmartNull object. Phương thức test với object này vẫn bị fail, nhưng chúng ta có thể stack trace một unstubbed method chưa được gọi.
+- **RETURNS_MOCKS** : Mockito cố gắng return các empty value trước, sau đó đến mock object, cuối cùng sẽ return null. Chẳng hạn, đối với các String hoặc array, nếu nó không được stub thì Mockito sẽ trả về null. Nếu sử dụng loại Answer này, kết quả trả về là một emty string, empty array.
+- **RETURNS_DEEP_STUBS** : cho phép deep stub. Ví dụ, when(mock.getBar().getName()).thenReturn(“deep”);
+- **CALLS_REAL_METHODS** : gọi một real method nếu các method không được stub, tương tự như sử dụng @Spy.
+
+Chi tiết về các loại Answer, MockSettings và ví dụ các bạn xem thêm trên document của Mockito.
 
 ### 3.2. @Mock
 ```java
@@ -114,39 +150,39 @@ Tuy nhiên, gắn @Mock là chưa đủ, bạn cần kích hoạt Mockito để 
 
 Sau khi kích hoạt, thì tất cả các object được gắn @Mock sẽ trở thành 1 object giả mạo, và đã được khởi tạo (tức là != null)
 
-Các cách kích hoạt như sau:
-
-#### Cách 1: Gắn @RunWith(MockitoJUnitRunner.class) lên class test của bạn
-
+Cách kích hoạt như sau: Gắn @ExtendWith(MockitoExtension.class) lên class test của bạn
 ```java
-@RunWith(MockitoJUnitRunner.class)
-public class MockitoAnnotationTest {
-    @Mock
-    List<String> mockedList;
-}
+@ExtendWith(MockitoExtension.class)
 ```
-
-#### Cách 2: Tạo ra một đối tượng MockitoRule bên trong class test của bạn
+Class test hoàn chỉnh
 ```java
-public class MockitoAnnotationTest {
-    @Rule
-    public MockitoRule initRule = MockitoJUnit.rule();
-    
-    @Mock
-    List<String> mockedList;
-}
-```
+package creacademy.basic.mock;
 
-#### Cách 3: Sử dụng Mockito.init()
-```java
-public class MockitoAnnotationTest {
-    @Mock
-    List<String> mockedList;
+import org.junit.Assert;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-    @Before
-    public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-    }
+import java.util.List;
+
+@ExtendWith(MockitoExtension.class)
+public class MockitoExtendWithTest {
+  @Mock
+  List<String> mockedList;
+
+  @Test
+  @DisplayName("ExtendWith MockitoExtension test")
+  public void testMockFunction() {
+    // 1. Định nghĩa hành vi
+    // Định nghĩa bất cứ khi nào gọi đến hàm size sẽ trả về 2
+    Mockito.when(mockedList.size()).thenReturn(2);
+
+    // 2. Gọi method và Kiểm tra kết quả
+    Assert.assertEquals(2, mockedList.size());
+  }
 }
 ```
 
@@ -199,42 +235,138 @@ Lưu ý: như trước đây - chúng ta đang tương tác với spy ở đây 
 Đã sử dụng real method spiedList.add () để thêm các phần tử vào spiedList.
 Stubbed phương thức spiedList.size () để trả về 100 thay vì 2 bằng Mockito.doReturn
 
+Class test hoàn chỉnh
+```java
+package creacademy.basic.mock;
+
+import org.junit.Assert;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@ExtendWith(MockitoExtension.class)
+public class SpyTest {
+    @Spy
+    List<String> spiedList = new ArrayList<>();
+
+    @Test
+    @DisplayName("Spy test")
+    public void whenUseSpyAnnotation_thenSpyIsInjected() {
+        // 1. Tạo mock data
+        spiedList.add("one");
+        spiedList.add("two");
+
+        Mockito.verify(spiedList).add("one");
+        Mockito.verify(spiedList).add("two");
+
+        // 2. Gọi method và Kiểm tra kết quả khi chưa mock kết quả trả về Spy object
+        Assert.assertEquals(2, spiedList.size());
+
+        // 2.1. Gọi method và Kiểm tra kết quả khi đã mock kết quả trả về Spy object
+        Mockito.doReturn(100).when(spiedList).size();
+        Assert.assertEquals(100, spiedList.size());
+    }
+}
+```
+
 ### 3.4. @Captor
+ArgumentCaptor cho phép chúng ta theo dõi các tham số truyền vào một method. Tính năng này đặc biệt hữu ích khi chúng ta không thế truy cập các tham số này từ bên ngoài nhưng vẫn muốn kiểm tra giá trị của chúng khi truyền vào method.
 Tiếp theo - hãy xem cách sử dụng chú thích @Captor để tạo một instance ArgumentCaptor.
 
 Trong ví dụ sau - chúng ta tạo một ArgumentCaptor theo cách cũ mà không sử dụng chú thích @Captor:
 
 ```java
-@Test
-public void whenNotUseCaptorAnnotation_thenCorrect() {
-List mockList = Mockito.mock(List.class);
-ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
+package creacademy.basic.mock;
+import org.junit.Assert;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.List;
+
+@ExtendWith(MockitoExtension.class)
+public class CaptorArgumentTest {
+  @Test
+  @DisplayName("CaptorArgument test")
+  public void whenNotUseCaptorAnnotation_thenCorrect() {
+    // 1. Tạo mock data
+    List mockList = Mockito.mock(List.class);
+
+    ArgumentCaptor<String> argCaptor = ArgumentCaptor.forClass(String.class);
+
     mockList.add("one");
-    Mockito.verify(mockList).add(arg.capture());
- 
-    assertEquals("one", arg.getValue());
+
+    // 2. Capture value hàm add vào ArgumentCaptor
+    Mockito.verify(mockList).add(argCaptor.capture());
+
+    // 3. Gọi method và Kiểm tra kết quả khi ArgumentCaptor capture lại kết quả method add
+    Assert.assertEquals("one", argCaptor.getValue());
+  }
 }
 ```
 
 Bây giờ chúng ta hãy sử dụng @Captor cho cùng một mục đích - để tạo một instance ArgumentCaptor:
 
 ```java
-@Mock
-List mockedList;
+package creacademy.basic.mock;
 
-@Captor
-ArgumentCaptor argCaptor;
+import org.junit.Assert;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@Test
-public void whenUseCaptorAnnotation_thenTheSam() {
-    mockedList.add("one");
-    Mockito.verify(mockedList).add(argCaptor.capture());
-    assertEquals("one", argCaptor.getValue());
+import java.util.List;
+
+@ExtendWith(MockitoExtension.class)
+public class CaptorAnnotationTest {
+  @Captor
+  ArgumentCaptor argCaptor;
+
+  @Test
+  @DisplayName("Captor Annotation test")
+  public void whenNotUseCaptorAnnotation_thenCorrect() {
+    // 1. Tạo mock data
+    List mockList = Mockito.mock(List.class);
+    mockList.add("one");
+
+    // 2. Capture value hàm add vào ArgumentCaptor
+    Mockito.verify(mockList).add(argCaptor.capture());
+
+    // 3. Gọi method và Kiểm tra kết quả khi ArgumentCaptor capture lại kết quả method add
+    Assert.assertEquals("one", argCaptor.getValue());
+  }
 }
+
 ```
 
 ### 3.5. @InjectMocks
-Bây giờ - hãy thảo luận về cách sử dụng chú thích @InjectMocks - để tự động đưa các trường giả vào đối tượng được kiểm tra.
+Trong một số trường hợp, chúng ta cần tạo một object test mà object này chứa các dependency khác. Vì vậy, chúng ta cần phải tạo các Mock/ Spy object cho các dependency và inject chúng vào đối tượng test. Để làm được điều này, chúng ta có thể sử dụng Annotation @InjectMocks.
+
+**@InjectMocks** được sử dụng ở mức field, để đánh dấu các field này cần inject các dependency. Mokito cố gắng inject các giá trị cho các field này thông qua constructor, setter hoặc property injection. Nó sẽ không throw bất kỳ lỗi nào nếu không tìm được injection phù hợp.
+
+Khả năng của **@InjectMocks**:
+
+- Tạo một real instance object để test.
+- Có thể gọi thực thi thực sự các phương thức được test.
+- Inject các dependency đã được khởi tạo bằng mock object (@Mock) vào object test.
+
+Sự khác nhau giữa @Mock và @InjectMocks:
+
+- **@Mock** được sử dụng để tạo một mock object.
+- **@InjectMocks** được sử dụng để khởi tạo một real object và inject các dependency.
 
 Trong ví dụ sau - chúng ta sử dụng @InjectMocks để đưa wordMap vào MyDipedia dic :
 
@@ -269,7 +401,55 @@ Map<String, String> wordMap;
     }
 }
 ```
+Class test hoàn chỉnh
+```java
+package creacademy.basic.mock;
 
+import org.junit.Assert;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@ExtendWith(MockitoExtension.class)
+public class InjectMocksTest {
+    @Mock
+    Map<String, String> wordMap;
+
+    /**
+    * Trong class MyDictionary có wordMap và nó sẽ không hoạt động, sử dụng annotation @InjectMock của Mockito
+    */
+    @InjectMocks
+    MyDictionary dic = new MyDictionary();
+
+    @Test
+    @DisplayName("InjectMocks test")
+    public void whenUseInjectMocksAnnotation_thenCorrect() {
+        Mockito.when(wordMap.get("aWord")).thenReturn("aMeaning");
+        Assert.assertEquals("aMeaning", dic.getMeaning("aWord"));
+    }
+}
+
+class MyDictionary {
+    Map<String, String> wordMap;
+
+    public MyDictionary() {
+        wordMap = new HashMap<>();
+    }
+    public void add(final String word, final String meaning) {
+        wordMap.put(word, meaning);
+    }
+    public String getMeaning(final String word) {
+        return wordMap.get(word);
+    }
+}
+```
 ### 3.6. Injecting a Mock into a Spy
 Tương tự như thử nghiệm trên, chúng ta có thể muốn inject mock vào một spy:
 
@@ -1315,6 +1495,6 @@ https://hocspringboot.net/2020/10/27/mockito-trong-spring-boot-la-gi (20231129-1
 
 https://viblo.asia/p/annotation-mockito-atmock-atspy-atcaptor-and-atinjectmocks-L4x5x1MYKBM (20231129-16h00)
 
-https://201creacademy.edu.vn/5413-mockito-control-mocks-behavior (20231129-16h00)
+https://gpcoder.com/5413-mockito-control-mocks-behavior (20231129-16h00)
 
-https://201creacademy.edu.vn/5431-mockito-verifying-behavior (20231129-16h00)
+https://gpcoder.com/5431-mockito-verifying-behavior (20231129-16h00)
