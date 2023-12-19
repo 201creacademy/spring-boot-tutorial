@@ -8,24 +8,27 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @ExtendWith(MockitoExtension.class)
-public class InjectMocksTest {
+public class InjectMocksIntoSpyInstanceTest {
     @Mock
     Map<String, String> wordMap;
 
     /**
-     * Trong class MyDictionary có wordMap và nó sẽ không hoạt động, sử dụng annotation @InjectMock của Mockito
+     * Trong class MyDictionarySpy có wordMap và nó sẽ không hoạt động
+     * Muốn sử dụng @InjectMocks yêu cầu phải tạo mới instance của MyDictionarySpy, nếu không sẽ throw exception
      */
+    @Spy
     @InjectMocks
     MyDictionary dic = new MyDictionary();
 
     @Test
-    @DisplayName("InjectMocks test")
+    @DisplayName("InjectMocks into Spy Instance test")
     public void whenUseInjectMocksAnnotation_thenCorrect() {
         // 1. Định nghĩa hành vi
         // Định nghĩa bất cứ khi nào gọi đến hàm get cũng sẽ trả về aMeaning

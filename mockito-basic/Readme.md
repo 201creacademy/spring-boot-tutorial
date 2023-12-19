@@ -217,8 +217,8 @@ List<String> spiedList = new ArrayList<String>();
 
 @Test
 public void whenUseSpyAnnotation_thenSpyIsInjected() {
-spiedList.add("one");
-spiedList.add("two");
+    spiedList.add("one");
+    spiedList.add("two");
 
     Mockito.verify(spiedList).add("one");
     Mockito.verify(spiedList).add("two");
@@ -442,6 +442,11 @@ class MyDictionary {
     public MyDictionary() {
         wordMap = new HashMap<>();
     }
+
+    public MyDictionary(Map<String, String> wordMap) {
+      this.wordMap = wordMap;
+    }
+  
     public void add(final String word, final String meaning) {
         wordMap.put(word, meaning);
     }
@@ -451,47 +456,61 @@ class MyDictionary {
 }
 ```
 ### 3.6. Injecting a Mock into a Spy
-Tương tự như thử nghiệm trên, chúng ta có thể muốn inject mock vào một spy:
+Tương tự như thử nghiệm trên, chúng ta có thể muốn inject mock vào một spy
 
+Chúng ta có thể sử dụng annotation @InjectMocks
+
+Tuy nhiên muốn sử dụng @InjectMocks yêu cầu phải tạo mới instance của MyDictionarySpy, nếu không sẽ throw exception
 ```java
 @Mock
 Map<String, String> wordMap;
 
 @Spy
-MyDictionary spyDic = new MyDictionary();
+@InjectMocks
+MyDictionary dic = new MyDictionary();
 ```
 
-Tuy nhiên, Mockito không hỗ trợ inject mock vào một spy và các test sau ném ra một exeption:
-
+Class test hoàn chỉnh
 ```java
-@Test
-public void whenUseSpyWhichNeedsTheMock_thenCorrect() {
-Mockito.when(wordMap.get("aWord")).thenReturn("aMeaning");
+package creacademy.basic.mock;
 
-    assertEquals("aMeaning", spyDic.getMeaning("aWord")); 
-}
-```
+import creacademy.model.MyDictionary;
+import org.junit.Assert;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-Nếu chúng ta muốn sử dụng một mock với một spy, chúng ta có thể inject mock thông qua một constructor :
+import java.util.HashMap;
+import java.util.Map;
 
-```java
-MyDictionary(Map<String, String> wordMap) {
-    this.wordMap = wordMap;
-}
-```
+@ExtendWith(MockitoExtension.class)
+public class InjectMocksIntoSpyInstanceTest {
+    @Mock
+    Map<String, String> wordMap;
 
-Thay vì sử dụng chú thích, giờ đây chúng ta có thể tạo spy theo cách thủ công:
+    /**
+     * Trong class MyDictionarySpy có wordMap và nó sẽ không hoạt động
+     * Muốn sử dụng @InjectMocks yêu cầu phải tạo mới instance của MyDictionarySpy, nếu không sẽ throw exception
+     */
+    @Spy
+    @InjectMocks
+    MyDictionary dic = new MyDictionary();
 
-```java
-@Mock
-Map<String, String> wordMap;
+    @Test
+    @DisplayName("InjectMocks into Spy Instance test")
+    public void whenUseInjectMocksAnnotation_thenCorrect() {
+        // 1. Định nghĩa hành vi
+        // Định nghĩa bất cứ khi nào gọi đến hàm get cũng sẽ trả về aMeaning
+        Mockito.when(wordMap.get("aWord")).thenReturn("aMeaning");
 
-MyDictionary spyDic;
-
-@Before
-public void init() {
-    MockitoAnnotations.initMocks(this);
-    spyDic = Mockito.spy(new MyDictionary(wordMap));
+        // 2. Gọi method và Kiểm tra kết quả
+        Assert.assertEquals("aMeaning", dic.getMeaning("aWord"));
+    }
 }
 ```
 
